@@ -100,7 +100,7 @@ export function WorkflowProgress({ events, status }: Props) {
       </div>
 
       <div className="space-y-1">
-        {steps.map((step) => {
+        {steps.map((step, idx) => {
           const Icon = stepIcons[step.key];
           return (
             <div
@@ -109,7 +109,7 @@ export function WorkflowProgress({ events, status }: Props) {
               style={{
                 // animationDelay cannot be expressed as a Tailwind class with a dynamic value;
                 // inline style is intentional, not an oversight.
-                animationDelay: `${steps.indexOf(step) * 60}ms`,
+                animationDelay: `${idx * 60}ms`,
               }}
             >
               <div className="flex items-center gap-2">

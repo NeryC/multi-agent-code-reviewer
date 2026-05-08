@@ -13,7 +13,7 @@ const SKELETON_LABELS = [
 
 export function WorkflowSkeleton() {
   return (
-    <div className="space-y-2 animate-fade-in" aria-label="Preparing analysis…">
+    <div className="space-y-2 animate-fade-in" role="status" aria-label="Preparing analysis…">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium text-muted-foreground">Workflow</h2>
         <span className="text-xs text-muted-foreground animate-pulse">
