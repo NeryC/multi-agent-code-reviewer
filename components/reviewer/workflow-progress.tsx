@@ -82,7 +82,7 @@ export function WorkflowProgress({ events, status }: Props) {
   const isDone = status === 'done';
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 animate-fade-in">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium text-muted-foreground">Workflow</h2>
         {isStreaming && (
@@ -105,7 +105,12 @@ export function WorkflowProgress({ events, status }: Props) {
           return (
             <div
               key={step.key}
-              className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
+              className="flex items-center justify-between rounded-md border px-3 py-2 text-sm animate-slide-up"
+              style={{
+                // animationDelay cannot be expressed as a Tailwind class with a dynamic value;
+                // inline style is intentional, not an oversight.
+                animationDelay: `${steps.indexOf(step) * 60}ms`,
+              }}
             >
               <div className="flex items-center gap-2">
                 {/* Step icon */}

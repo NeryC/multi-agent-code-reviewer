@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 export default function Home() {
   return (
     <main className="container mx-auto max-w-3xl p-6 space-y-8">
-      <header className="space-y-4">
+      <header className="space-y-4 animate-fade-in">
         <div className="space-y-3">
           {/* Agent count pill */}
           <Badge

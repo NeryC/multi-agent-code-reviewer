@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { CodeInput } from '@/components/reviewer/code-input';
 import { WorkflowProgress } from '@/components/reviewer/workflow-progress';
+import { WorkflowSkeleton } from '@/components/reviewer/workflow-skeleton';
 import { ReportSummary } from '@/components/reviewer/report-summary';
 import type { WorkflowEventType } from '@/lib/workflow/orchestrate';
 import type { ReviewReport } from '@/lib/schemas';
@@ -116,6 +117,7 @@ export function ReviewerClient() {
         </div>
       )}
 
+      {isLoading && events.length === 0 && <WorkflowSkeleton />}
       {events.length > 0 && <WorkflowProgress events={events} status={status} />}
 
       {report && <ReportSummary report={report} />}
