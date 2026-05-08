@@ -1,8 +1,8 @@
 # Multi-Agent Code Reviewer
 
-Tres agentes de IA especializados revisan tu código en paralelo — seguridad, rendimiento y mantenibilidad — y un supervisor sintetiza un reporte con puntuación de 0 a 100.
+Three specialized AI agents review your code in parallel — security, performance, and maintainability — and a supervisor synthesizes a scored report from 0 to 100.
 
-> **Demo en vivo:** [multi-agent-code-reviewer-sable.vercel.app](https://multi-agent-code-reviewer-sable.vercel.app)  
+> **Live demo:** [multi-agent-code-reviewer-sable.vercel.app](https://multi-agent-code-reviewer-sable.vercel.app)  
 > **GitHub:** [github.com/NeryC/multi-agent-code-reviewer](https://github.com/NeryC/multi-agent-code-reviewer)
 
 <!--
@@ -12,28 +12,28 @@ Tres agentes de IA especializados revisan tu código en paralelo — seguridad, 
 
 ---
 
-## ¿Qué hace este proyecto?
+## What does this project do?
 
-El Multi-Agent Code Reviewer demuestra una arquitectura de **orquestación multi-agente**: en lugar de usar un único modelo de lenguaje para hacer todo, se usan cuatro agentes especializados con responsabilidades distintas:
+The Multi-Agent Code Reviewer demonstrates a **multi-agent orchestration architecture**: instead of using a single language model to do everything, four specialized agents work with distinct responsibilities:
 
-1. **Agente de Seguridad** — detecta vulnerabilidades: inyección SQL, XSS, secretos hardcodeados, validación de inputs, autenticación defectuosa
-2. **Agente de Rendimiento** — detecta problemas de eficiencia: queries N+1, bucles ineficientes, memory leaks, operaciones bloqueantes innecesarias
-3. **Agente de Mantenibilidad** — evalúa calidad de código: complejidad, nombres de variables, duplicación, cobertura de tests, documentación
-4. **Supervisor** — consolida los hallazgos de los 3 agentes, elimina duplicados, los prioriza por severidad, escribe un resumen ejecutivo y asigna una puntuación global de 0–100
+1. **Security Agent** — detects vulnerabilities: SQL injection, XSS, hardcoded secrets, input validation gaps, authentication flaws
+2. **Performance Agent** — detects efficiency problems: N+1 queries, inefficient loops, memory leaks, unnecessary blocking operations
+3. **Maintainability Agent** — evaluates code quality: complexity, variable naming, duplication, test coverage, documentation
+4. **Supervisor** — consolidates findings from the 3 agents, removes duplicates, prioritizes by severity, writes an executive summary, and assigns an overall score of 0–100
 
-Los 3 agentes especialistas corren **en paralelo** vía `Promise.all`, minimizando el tiempo total de análisis. Los resultados llegan al navegador como eventos SSE en tiempo real conforme cada agente termina.
+The 3 specialist agents run **in parallel** via `Promise.all`, minimizing total analysis time. Results reach the browser as real-time SSE events as each agent completes.
 
 ---
 
-## Tutorial paso a paso
+## Step-by-step tutorial
 
-### Paso 1: Abre la aplicación
+### Step 1: Open the application
 
-Ve a [multi-agent-code-reviewer-sable.vercel.app](https://multi-agent-code-reviewer-sable.vercel.app). Verás un panel con dos opciones de entrada: **snippet** (pegar código directamente) y **GitHub URL** (analizar un archivo de un repositorio público).
+Go to [multi-agent-code-reviewer-sable.vercel.app](https://multi-agent-code-reviewer-sable.vercel.app). You will see a panel with two input options: **snippet** (paste code directly) and **GitHub URL** (analyze a file from a public repository).
 
-### Paso 2: Pega tu código o ingresa una URL de GitHub
+### Step 2: Paste your code or enter a GitHub URL
 
-**Opción A — Snippet** (pega código directamente en el editor):
+**Option A — Snippet** (paste code directly into the editor):
 
 ```python
 import sqlite3
@@ -41,129 +41,131 @@ import sqlite3
 def get_user(username, password):
     conn = sqlite3.connect("users.db")
     cursor = conn.cursor()
-    # Concatenación directa — vulnerable a SQL injection
+    # Direct concatenation — vulnerable to SQL injection
     query = f"SELECT * FROM users WHERE username = '{username}' AND password = '{password}'"
     cursor.execute(query)
     return cursor.fetchone()
 ```
 
-**Opción B — GitHub URL** (analizar un archivo de un repo público):
+**Option B — GitHub URL** (analyze a file from a public repo):
 
 ```
-https://github.com/usuario/repositorio/blob/main/src/api/auth.py
+https://github.com/user/repository/blob/main/src/api/auth.py
 ```
 
-La aplicación convierte automáticamente la URL a `raw.githubusercontent.com` para obtener el contenido.
+The application automatically converts the URL to `raw.githubusercontent.com` to fetch the raw file content.
 
-### Paso 3: Haz clic en "Review"
+### Step 3: Click "Review"
 
-Una vez que envías el código, verás una **línea de tiempo de progreso** en vivo:
+Once you submit the code, you will see a **live progress timeline**:
 
 ```
-✓ Input parsed          → código válido detectado (Python, 12 líneas)
-✓ Metadata extracted    → complejidad: low
+✓ Input parsed           → valid code detected (Python, 12 lines)
+✓ Metadata extracted     → complexity: low
 
-🔄 Security agent       → analizando...
-🔄 Performance agent    → analizando...
-🔄 Maintainability agent → analizando...
+🔄 Security agent        → analyzing...
+🔄 Performance agent     → analyzing...
+🔄 Maintainability agent → analyzing...
 
-✓ Security agent        → 2 findings
-✓ Maintainability agent → 3 findings
-✓ Performance agent     → 1 finding
+✓ Security agent         → 2 findings
+✓ Maintainability agent  → 3 findings
+✓ Performance agent      → 1 finding
 
-🔄 Supervisor           → consolidando...
-✓ Supervisor            → reporte listo
+🔄 Supervisor            → consolidating...
+✓ Supervisor             → report ready
 
 Score: 42/100
 ```
 
-Los 3 agentes se ejecutan en paralelo — notarás que pueden completarse en cualquier orden.
+The 3 agents run in parallel — you will notice they can complete in any order.
 
-### Paso 4: Lee el reporte
+### Step 4: Read the report
 
-El reporte final tiene:
+The final report includes:
 
-- **Gauge visual** mostrando la puntuación (0–100) con color: rojo (<50), naranja (50–70), amarillo (70–85), verde (85+)
-- **Resumen ejecutivo** de 2-3 oraciones sobre qué hace el código y su calidad general
-- **Recomendación principal** — lo más importante a arreglar primero
-- **Tabs por categoría** — Seguridad / Rendimiento / Mantenibilidad con sus hallazgos
-- **Cards expandibles** por cada finding, con:
-  - Badge de severidad (critical / high / medium / low / info)
-  - Descripción del problema
-  - Sugerencia de corrección
-  - Diff de código (antes/después) cuando el agente lo generó
+- **Visual gauge** showing the score (0–100) with color coding: red (<50), orange (50–70), yellow (70–85), green (85+)
+- **Executive summary** of 2–3 sentences about what the code does and its overall quality
+- **Top recommendation** — the most important thing to fix first
+- **Tabs by category** — Security / Performance / Maintainability with their findings
+- **Expandable cards** for each finding, with:
+  - Severity badge (critical / high / medium / low / info)
+  - Problem description
+  - Fix suggestion
+  - Code diff (before/after) when the agent generated one
 
-### Ejemplo de hallazgo
+### Example finding
 
-Para el código Python de arriba, el agente de seguridad generaría algo así:
+For the Python code above, the security agent would produce something like:
 
 ```
 🔴 CRITICAL — SQL Injection Vulnerability
 
-Línea 7
-La consulta construye SQL concatenando directamente inputs del usuario sin sanitización.
-Un atacante puede usar: username = "' OR 1=1 --" para acceder a todos los usuarios.
+Line 7
+The query builds SQL by directly concatenating user inputs without sanitization.
+An attacker can use: username = "' OR 1=1 --" to access all users.
 
-Sugerencia: Usar consultas parametrizadas.
+Suggestion: Use parameterized queries.
 
-Antes:
+Before:
   query = f"SELECT * FROM users WHERE username = '{username}' AND password = '{password}'"
 
-Después:
+After:
   query = "SELECT * FROM users WHERE username = ? AND password = ?"
   cursor.execute(query, (username, password))
 ```
 
 ---
 
-## Demostración: flujo interno completo
+## Internal demo: full flow walkthrough
+
+The following traces every step from the browser click to the final SSE event:
 
 ```
-Usuario pega código y hace click en "Review"
+User pastes code and clicks "Review"
          │
          ▼
 ┌────────────────────────────────────────────────────┐
 │  Browser — reviewer-client.tsx                     │
 │  POST /api/review                                  │
 │  Body: { inputType: "snippet", value: "..." }      │
-│  Abre EventSource → escucha eventos SSE            │
+│  Opens EventSource → listens for SSE events        │
 └──────────────────────┬─────────────────────────────┘
                        │
                        ▼
 ┌────────────────────────────────────────────────────┐
 │  /api/review/route.ts                              │
 │                                                    │
-│  1. Rate limit: 3 reviews/IP/hora                  │
-│  2. Valida body: inputType + value presentes       │
-│  3. Crea ReadableStream SSE                        │
-│  4. Llama orchestrate(send, body)                  │
+│  1. Rate limit: 3 reviews/IP/hour                  │
+│  2. Validates body: inputType + value present      │
+│  3. Creates ReadableStream (SSE)                   │
+│  4. Calls orchestrate(send, body)                  │
 └──────────────────────┬─────────────────────────────┘
                        │
                        ▼
 ┌────────────────────────────────────────────────────────────────────────────┐
-│  lib/workflow/orchestrate.ts — el director de orquesta                     │
+│  lib/workflow/orchestrate.ts — the orchestration director                  │
 │                                                                            │
 │  1. send({ type: 'started', jobId })                                       │
 │                                                                            │
-│  2. Paso "parseInput":                                                     │
-│     - Si inputType === 'github-url': fetchGitHubFile(url)                  │
-│       → convierte URL de GitHub a raw.githubusercontent.com                │
-│       → hace fetch del contenido crudo                                     │
-│     - Si inputType === 'snippet': usa el código directamente               │
+│  2. Step "parseInput":                                                     │
+│     - If inputType === 'github-url': fetchGitHubFile(url)                  │
+│       → converts GitHub URL to raw.githubusercontent.com                   │
+│       → fetches the raw file content                                       │
+│     - If inputType === 'snippet': uses the code directly                   │
 │     send({ type: 'step', name: 'parseInput', status: 'done' })            │
 │                                                                            │
-│  3. Paso "extractMetadata":                                                │
-│     - Detecta lenguaje (Python, JS, Go...) por extensión y keywords        │
-│     - Cuenta líneas                                                        │
-│     - Estima complejidad (low/medium/high)                                 │
+│  3. Step "extractMetadata":                                                │
+│     - Detects language (Python, JS, Go...) by keywords                     │
+│     - Counts lines                                                         │
+│     - Estimates complexity (low/medium/high)                               │
 │     send({ type: 'step', name: 'extractMetadata', status: 'done' })       │
 │                                                                            │
-│  4. Anuncia los 3 agentes como "running" ANTES de awaitar                 │
+│  4. Announces all 3 agents as "running" BEFORE awaiting them               │
 │     send({ type: 'agent', name: 'security', status: 'running' })          │
 │     send({ type: 'agent', name: 'performance', status: 'running' })       │
 │     send({ type: 'agent', name: 'maintainability', status: 'running' })   │
 │                                                                            │
-│  5. Promise.all — los 3 agentes en paralelo:                               │
+│  5. Promise.all — the 3 agents run in parallel:                            │
 │                                                                            │
 │     ┌──────────────────────┐  ┌──────────────────────┐  ┌──────────────┐  │
 │     │  securityAgent       │  │  performanceAgent    │  │  maintAgent  │  │
@@ -176,89 +178,167 @@ Usuario pega código y hace click en "Review"
 │                │                          │                     │          │
 │           send(agent done)          send(agent done)       send(done)     │
 │                                                                            │
-│  6. Supervisor (secuencial, después de los 3):                             │
+│  6. Supervisor (sequential — needs all 3 results):                         │
 │     runSupervisorAgent(allFindings, meta)                                  │
 │     → claude-haiku-4.5 + ReviewReportSchema                               │
-│     → deduplica, prioriza, escribe summary, asigna score                  │
+│     → deduplicates, prioritizes, writes summary, assigns score            │
 │     send({ type: 'report', report })                                       │
 │     send({ type: 'done' })                                                 │
 └────────────────────────────────────────────────────────────────────────────┘
                        │
                        ▼
 ┌─────────────────────────────────────────────────────┐
-│  Browser recibe eventos SSE en tiempo real          │
-│  useReviewStream hook actualiza el estado de React   │
-│  WorkflowProgress muestra la línea de tiempo        │
-│  ReportSummary renderiza el reporte final           │
+│  Browser receives SSE events in real time           │
+│  useReviewStream hook updates React state           │
+│  WorkflowProgress renders the live timeline         │
+│  ReportSummary renders the final report             │
 └─────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Arquitectura del código
+## Code architecture
 
-### Estructura de carpetas
+### Folder structure
 
 ```
 multi-agent-code-reviewer/
 ├── app/
-│   ├── page.tsx                    # Shell del servidor (importa el client component)
-│   ├── reviewer-client.tsx         # 'use client' — layout, useReviewStream, estado
+│   ├── page.tsx                    # Server shell (imports the client component)
+│   ├── reviewer-client.tsx         # 'use client' — layout, useReviewStream, state
 │   └── api/review/
-│       └── route.ts                # Endpoint SSE — rate limit + orquestación
+│       └── route.ts                # SSE endpoint — rate limit + orchestration
 ├── lib/
-│   ├── schemas.ts                  # Esquemas Zod: Finding, CodeMetadata, ReviewReport
-│   ├── metadata.ts                 # extractMetadata() — detección de lenguaje y complejidad
-│   ├── github.ts                   # fetchGitHubFile() — convierte URL de GitHub a contenido
-│   ├── rate-limit.ts               # Rate limiter en memoria (IP-based)
+│   ├── schemas.ts                  # Zod schemas: Finding, CodeMetadata, ReviewReport
+│   ├── metadata.ts                 # extractMetadata() — language and complexity detection
+│   ├── github.ts                   # fetchGitHubFile() — converts GitHub URL to content
+│   ├── rate-limit.ts               # In-memory rate limiter (IP-based)
 │   ├── agent/
-│   │   ├── model.ts                # REVIEW_MODEL y SUPERVISOR_MODEL
+│   │   ├── model.ts                # REVIEW_MODEL and SUPERVISOR_MODEL constants
 │   │   ├── security.ts             # runSecurityAgent()
 │   │   ├── performance.ts          # runPerformanceAgent()
 │   │   ├── maintainability.ts      # runMaintainabilityAgent()
 │   │   └── supervisor.ts           # runSupervisorAgent()
 │   └── workflow/
-│       └── orchestrate.ts          # orchestrate() — el director de todos los agentes
+│       └── orchestrate.ts          # orchestrate() — drives all agents
 └── components/reviewer/
-    ├── code-input.tsx              # Editor de código + tab de GitHub URL
-    ├── workflow-progress.tsx        # Línea de tiempo de agentes en tiempo real
-    ├── finding-card.tsx            # Card expandible con diff de código
-    └── report-summary.tsx          # Gauge de puntuación + tabs por categoría
+    ├── code-input.tsx              # Code editor + GitHub URL tab
+    ├── workflow-progress.tsx       # Real-time agent timeline
+    ├── finding-card.tsx            # Expandable card with code diff
+    └── report-summary.tsx          # Score gauge + tabs by category
 ```
 
-### Archivo por archivo: qué hace cada uno
+### File-by-file: what each file does
 
-#### `lib/schemas.ts` — Los tipos de datos de toda la aplicación
+#### `lib/schemas.ts` — The data contracts for the entire application
 
 ```typescript
-// Un hallazgo individual de cualquier agente
+// An individual finding from any agent
 export const FindingSchema = z.object({
   severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
   category: z.enum(['security', 'performance', 'maintainability']),
   title: z.string(),
-  line: z.number().int().positive().optional(),   // Número de línea del problema
-  description: z.string(),                         // Descripción del problema
-  suggestion: z.string(),                          // Cómo arreglarlo
-  codeExample: z.object({                          // Diff antes/después (opcional)
+  line: z.number().int().positive().optional(),   // Line number of the issue
+  description: z.string(),                         // Problem description
+  suggestion: z.string(),                          // How to fix it
+  codeExample: z.object({                          // Before/after diff (optional)
     before: z.string(),
     after: z.string(),
   }).optional(),
 });
 
-// El reporte final que produce el supervisor
+// The final report produced by the supervisor
 export const ReviewReportSchema = z.object({
-  score: z.number().int().min(0).max(100),          // Puntuación global
-  summary: z.string(),                               // Resumen ejecutivo (2-3 frases)
-  recommendation: z.string(),                        // Lo más importante a hacer
-  findings: FindingArraySchema,                      // Todos los hallazgos consolidados
+  score: z.number().int().min(0).max(100),          // Overall score
+  summary: z.string(),                               // Executive summary (2–3 sentences)
+  recommendation: z.string(),                        // The single most important action
+  findings: FindingArraySchema,                      // All consolidated findings
 });
 ```
 
-Estos esquemas son los contratos entre los agentes y la UI. `generateObject` de AI SDK v6 valida automáticamente que la salida del modelo cumple con el esquema antes de devolverla.
+These schemas are the contracts between the agents and the UI. The AI SDK's `generateObject` automatically validates that the model's output conforms to the schema before returning it.
 
 ---
 
-#### `lib/agent/security.ts` — El agente de seguridad
+#### `lib/metadata.ts` — Language and complexity detection
+
+```typescript
+function detectLanguage(code: string): string {
+  if (code.includes('def ') && code.includes(':') && !code.includes('=>')) return 'python';
+  if (code.includes('fn ') && code.includes('->') && code.includes('let ')) return 'rust';
+  if (code.includes('public static void main')) return 'java';
+  if (/SELECT\s+\w|FROM\s+\w/i.test(code)) return 'sql';
+  if (code.includes(': string') || code.includes(': number') || ...) return 'typescript';
+  return 'javascript';
+}
+
+export function extractMetadata(code: string): CodeMetadata {
+  const lines = code.split('\n').length;
+  return {
+    lang: detectLanguage(code),
+    lines,
+    estimatedComplexity: lines > 200 ? 'high' : lines > 50 ? 'medium' : 'low',
+  };
+}
+```
+
+The metadata is passed to every agent so that the prompt can specify the language and size context, improving the quality of findings.
+
+---
+
+#### `lib/github.ts` — Fetching GitHub files
+
+```typescript
+function toRawUrl(url: string): string {
+  // Converts: https://github.com/user/repo/blob/branch/path
+  //        → https://raw.githubusercontent.com/user/repo/branch/path
+  return url
+    .replace('https://github.com/', 'https://raw.githubusercontent.com/')
+    .replace('/blob/', '/');
+}
+
+export async function fetchGitHubFile(url: string): Promise<string> {
+  const rawUrl = toRawUrl(url);
+  const res = await fetch(rawUrl);
+  if (!res.ok) throw new Error(`Failed to fetch GitHub file: ${res.status}`);
+  return res.text();
+}
+```
+
+Users can paste a normal `github.com/.../blob/...` URL — the function converts it to the raw content URL transparently.
+
+---
+
+#### `lib/rate-limit.ts` — In-memory rate limiter
+
+```typescript
+type Bucket = { count: number; resetAt: number };
+const buckets = new Map<string, Bucket>();
+
+export function rateLimit(key: string, opts: RateLimitOptions) {
+  const now = Date.now();
+  const existing = buckets.get(key);
+
+  if (!existing || existing.resetAt <= now) {
+    // First request in the window, or window has expired — reset
+    buckets.set(key, { count: 1, resetAt: now + opts.windowMs });
+    return { allowed: true, remaining: opts.max - 1 };
+  }
+
+  if (existing.count >= opts.max) {
+    return { allowed: false, remaining: 0, resetAt: existing.resetAt };
+  }
+
+  existing.count += 1;
+  return { allowed: true, remaining: opts.max - existing.count };
+}
+```
+
+Simple sliding-window counter keyed by IP address. Each review triggers 4 LLM calls, so the limit is set conservatively to 3 reviews per IP per hour.
+
+---
+
+#### `lib/agent/security.ts` — The security agent
 
 ```typescript
 const SYSTEM = `You are a security code reviewer. Analyze the provided code and identify security vulnerabilities.
@@ -278,19 +358,19 @@ Be concise: title max 10 words, description max 50 words, suggestion max 50 word
 export async function runSecurityAgent(code: string, meta: CodeMetadata): Promise<Finding[]> {
   const { object } = await generateObject({
     model: REVIEW_MODEL,              // claude-sonnet-4.6
-    schema: FindingArraySchema,       // ← el modelo DEBE devolver JSON que cumpla este esquema
+    schema: FindingArraySchema,       // The model MUST return JSON matching this schema
     system: SYSTEM,
-    prompt: `Language: ${meta.lang}\nLines: ${meta.lines}\n\nCode:\n\`\`\`${meta.lang}\n${code}\n\`\`\``,
+    prompt: `Language: ${meta.lang}\nLines: ${meta.lines}\n\nCode to review:\n\`\`\`${meta.lang}\n${code}\n\`\`\``,
   });
-  return object; // Ya está validado y tipado: Finding[]
+  return object; // Already validated and typed: Finding[]
 }
 ```
 
-Los agentes de Rendimiento y Mantenibilidad tienen exactamente la misma estructura — solo cambia el `SYSTEM` prompt con el enfoque de cada especialista.
+The Performance and Maintainability agents have the exact same structure — only the `SYSTEM` prompt changes to reflect each specialist's focus area.
 
 ---
 
-#### `lib/agent/supervisor.ts` — El supervisor que consolida todo
+#### `lib/agent/supervisor.ts` — The consolidating supervisor
 
 ```typescript
 const SYSTEM = `You are a senior engineering lead synthesizing findings from 3 specialized code reviewers.
@@ -298,8 +378,8 @@ const SYSTEM = `You are a senior engineering lead synthesizing findings from 3 s
 Your job:
 1. Deduplicate findings that cover the same underlying issue (keep the most specific one)
 2. Reprioritize: security > performance > maintainability when severity is equal
-3. Write a 2-3 sentence executive summary
-4. Write a 1-sentence actionable recommendation
+3. Write a 2-3 sentence executive summary (what the code does, overall quality)
+4. Write a 1-sentence actionable recommendation (most important thing to fix first)
 5. Assign a score 0-100:
    90+ = production-ready
    70-89 = minor issues
@@ -308,41 +388,41 @@ Your job:
 
 export async function runSupervisorAgent(findings: Finding[], meta: CodeMetadata): Promise<ReviewReport> {
   const { object } = await generateObject({
-    model: SUPERVISOR_MODEL,          // claude-haiku-4.5 (más barato, tarea mecánica)
+    model: SUPERVISOR_MODEL,          // claude-haiku-4.5 (cheaper for mechanical synthesis)
     schema: ReviewReportSchema,       // Finding[] + score + summary + recommendation
     system: SYSTEM,
-    prompt: `Metadata: ${meta.lang}, ${meta.lines} lines\n\nFindings:\n${JSON.stringify(findings, null, 2)}`,
+    prompt: `Code metadata: ${meta.lang}, ${meta.lines} lines\n\nRaw findings:\n${JSON.stringify(findings, null, 2)}`,
   });
   return object;
 }
 ```
 
-**¿Por qué Haiku para el supervisor?** La tarea del supervisor es mecánica: ordenar, deduplicar, contar, resumir. No requiere el razonamiento profundo que necesitan los especialistas para detectar vulnerabilidades sutiles. Usar Haiku aquí reduce costos sin sacrificar calidad.
+**Why Haiku for the supervisor?** The supervisor's task is mechanical: sort, deduplicate, count, summarize. It does not require the deep reasoning that specialists need to detect subtle vulnerabilities. Using Haiku here reduces cost without sacrificing output quality.
 
 ---
 
-#### `lib/workflow/orchestrate.ts` — El director de orquesta
+#### `lib/workflow/orchestrate.ts` — The orchestration director
 
 ```typescript
 export async function orchestrate(send: SendEvent, input: ReviewInput): Promise<void> {
   const jobId = crypto.randomUUID();
   send({ type: 'started', jobId });
 
-  // Paso 1: Obtener el código
+  // Step 1: Fetch the code
   const code = input.inputType === 'github-url'
-    ? await fetchGitHubFile(input.value)  // Descarga desde GitHub
-    : input.value;                         // O usa el snippet directamente
+    ? await fetchGitHubFile(input.value)  // Download from GitHub
+    : input.value;                         // Or use the snippet directly
 
-  // Paso 2: Extraer metadatos
+  // Step 2: Extract metadata
   const meta = extractMetadata(code);     // lang, lines, estimatedComplexity
 
-  // Paso 3: Anunciar los 3 agentes ANTES de esperarlos
-  // (esto hace que la UI los muestre como "running" simultáneamente)
+  // Step 3: Announce all 3 agents as "running" BEFORE awaiting them
+  // This causes the UI to show all three as running simultaneously
   send({ type: 'agent', name: 'security', status: 'running' });
   send({ type: 'agent', name: 'performance', status: 'running' });
   send({ type: 'agent', name: 'maintainability', status: 'running' });
 
-  // Paso 4: Ejecutar los 3 en paralelo
+  // Step 4: Run the 3 agents in parallel
   const [secFindings, perfFindings, maintFindings] = await Promise.all([
     runSecurityAgent(code, meta).then((findings) => {
       send({ type: 'agent', name: 'security', status: 'done', findings });
@@ -358,7 +438,7 @@ export async function orchestrate(send: SendEvent, input: ReviewInput): Promise<
     }),
   ]);
 
-  // Paso 5: Supervisor (secuencial — necesita los resultados de todos)
+  // Step 5: Supervisor (sequential — needs all 3 results first)
   const report = await runSupervisorAgent(
     [...secFindings, ...perfFindings, ...maintFindings],
     meta,
@@ -369,27 +449,27 @@ export async function orchestrate(send: SendEvent, input: ReviewInput): Promise<
 }
 ```
 
-**El truco del SSE:** En vez de hacer polling desde el cliente ("¿ya terminó?"), el cliente abre una conexión SSE y el servidor empuja eventos conforme ocurren. Esto da una UX de progreso en tiempo real sin complejidad adicional.
+**The SSE trick:** instead of polling from the client ("is it done yet?"), the client opens an SSE connection and the server pushes events as they occur. This gives a real-time progress UX without any additional infrastructure.
 
 ---
 
-#### `app/api/review/route.ts` — El endpoint SSE
+#### `app/api/review/route.ts` — The SSE endpoint
 
 ```typescript
 export async function POST(req: Request) {
-  // Rate limit: 3 reviews/IP/hora
+  // Rate limit: 3 reviews/IP/hour
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
   const limit = rateLimit(ip, { max: 3, windowMs: 60 * 60 * 1000 });
   if (!limit.allowed) return new Response('Rate limit exceeded', { status: 429 });
 
   const body = await req.json() as ReviewInput;
 
-  // Crea un ReadableStream que enviará eventos SSE
+  // Create a ReadableStream that will emit SSE events
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
       const send = (event: object) => {
-        // Formato SSE: "data: <json>\n\n"
+        // SSE format: "data: <json>\n\n"
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
       };
 
@@ -398,14 +478,14 @@ export async function POST(req: Request) {
       } catch (err) {
         send({ type: 'error', message: String(err) });
       } finally {
-        controller.close(); // Cierra la conexión SSE
+        controller.close(); // Close the SSE connection
       }
     },
   });
 
   return new Response(stream, {
     headers: {
-      'Content-Type': 'text/event-stream',  // ← Indica al browser que es SSE
+      'Content-Type': 'text/event-stream',  // Tells the browser this is an SSE stream
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
     },
@@ -415,44 +495,106 @@ export async function POST(req: Request) {
 
 ---
 
-### Cómo funciona `generateObject` — el corazón de los agentes
+#### `app/reviewer-client.tsx` — The React client layer
 
-`generateObject` es la función de AI SDK v6 que:
-1. Llama al modelo de lenguaje
-2. Le pide que responda en formato JSON siguiendo un esquema Zod específico
-3. Valida automáticamente la respuesta contra ese esquema
-4. Lanza un error si el modelo no cumple el esquema (o reintenta, dependiendo de la config)
+The `useReviewStream` hook manages all the streaming state:
+
+```typescript
+function useReviewStream() {
+  const [events, setEvents] = useState<WorkflowEventType[]>([]);
+  const [status, setStatus] = useState<StreamStatus>('idle');
+  const [report, setReport] = useState<ReviewReport | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const startReview = useCallback(async (inputType, value) => {
+    // 1. POST to /api/review
+    const res = await fetch('/api/review', { method: 'POST', body: JSON.stringify({ inputType, value }) });
+
+    // 2. Read the SSE stream chunk by chunk
+    const reader = res.body.getReader();
+    let buffer = '';
+
+    while (true) {
+      const { done, value: chunk } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(chunk, { stream: true });
+      const parts = buffer.split('\n\n');  // SSE events are separated by \n\n
+      buffer = parts.pop() ?? '';
+
+      for (const part of parts) {
+        if (!part.startsWith('data: ')) continue;
+        const event = JSON.parse(part.slice('data: '.length));
+        setEvents((prev) => [...prev, event]);
+        if (event.type === 'report') setReport(event.report);
+        if (event.type === 'done') setStatus('done');
+        if (event.type === 'error') { setStatus('error'); setErrorMsg(event.message); }
+      }
+    }
+  }, []);
+
+  return { events, status, report, errorMsg, startReview };
+}
+```
+
+---
+
+#### `components/reviewer/workflow-progress.tsx` — Live agent timeline
+
+Takes the full array of SSE events and builds a list of step entries with state (`pending`, `running`, `done`, `error`). Each step renders a colored badge. The `running` state has an `animate-pulse` Tailwind class for the visual breathing effect.
+
+---
+
+#### `components/reviewer/finding-card.tsx` — Expandable finding card
+
+Renders a single `Finding` with severity badge, description, and fix suggestion. When the finding includes a `codeExample`, a "Show code example" toggle reveals a `ReactDiffViewer` component with the before/after diff. The diff viewer is loaded with `next/dynamic` and `ssr: false` because it depends on browser APIs.
+
+---
+
+#### `components/reviewer/report-summary.tsx` — Score gauge and category tabs
+
+The `ScoreGauge` component is a pure SVG circle with a `strokeDashoffset` calculated from the score value. Color thresholds: green ≥ 80, yellow ≥ 60, orange ≥ 40, red below 40. The findings are split by category and displayed in tabs.
+
+---
+
+### How `generateObject` works — the heart of every agent
+
+`generateObject` is the AI SDK v6 function that:
+1. Calls the language model
+2. Asks it to respond in JSON format following a specific Zod schema
+3. Automatically validates the response against that schema
+4. Throws an error if the model does not comply (or retries, depending on config)
 
 ```typescript
 const { object } = await generateObject({
   model: REVIEW_MODEL,
-  schema: FindingArraySchema,  // Zod schema = el contrato
-  system: "Eres un revisor de seguridad...",
-  prompt: `Código:\n${code}`,
+  schema: FindingArraySchema,  // Zod schema = the contract
+  system: "You are a security reviewer...",
+  prompt: `Code:\n${code}`,
 });
-// object es Finding[] — completamente tipado, sin parsing manual
+// object is Finding[] — fully typed, no manual parsing
 ```
 
-**¿Por qué esto es mejor que parsear texto libre?** Si el modelo devuelve markdown con hallazgos en texto, necesitas regex o lógica de parsing frágil. Con `generateObject`, el modelo está obligado a devolver JSON estructurado y si no lo hace, el SDK lo rechaza. Cero parsing, cero casos edge.
+**Why is this better than parsing free text?** If the model returns markdown with findings in prose, you need fragile regex or parsing logic. With `generateObject`, the model is required to return structured JSON, and if it does not, the SDK rejects it. Zero parsing, zero edge cases.
 
 ---
 
-## Stack tecnológico
+## Tech stack
 
-| Capa | Tecnología | ¿Por qué? |
-|------|-----------|-----------|
-| Framework | Next.js 16 App Router | Server Components, Route Handlers, deploy en Vercel |
-| AI SDK | Vercel AI SDK v6 | `generateObject` con Zod, streaming nativo |
-| Modelos | `claude-sonnet-4.6` (especialistas) + `claude-haiku-4.5` (supervisor) | Sonnet para análisis profundo, Haiku para síntesis mecánica |
-| Gateway | Vercel AI Gateway | Una sola API key para todos los modelos |
-| Schemas | Zod v4 | Contratos entre agentes y UI, validación automática |
-| Streaming | SSE (Server-Sent Events) nativo | Sin dependencias externas, compatible con cualquier cliente |
-| UI | Tailwind v4 | Componentes del reviewer construidos desde cero |
-| Deploy | Vercel (Hobby, 120s timeout) | Suficiente para análisis de la mayoría de archivos |
+| Layer | Technology | Why |
+|-------|-----------|-----|
+| Framework | Next.js 16 App Router | Server Components, Route Handlers, Vercel deployment |
+| AI SDK | Vercel AI SDK v6 | `generateObject` with Zod, native streaming |
+| Models | `claude-sonnet-4.6` (specialists) + `claude-haiku-4.5` (supervisor) | Sonnet for deep analysis, Haiku for mechanical synthesis |
+| Gateway | Vercel AI Gateway | Single API key for all models |
+| Schemas | Zod v4 | Contracts between agents and UI, automatic validation |
+| Streaming | Native SSE (Server-Sent Events) | No external dependencies, works in any browser |
+| UI | Tailwind v4 | Reviewer components built from scratch |
+| Deployment | Vercel (Hobby, 120s timeout) | Sufficient for analysis of most files |
 
 ---
 
-## Setup local
+## Local setup
 
 ```bash
 git clone https://github.com/NeryC/multi-agent-code-reviewer
@@ -460,49 +602,53 @@ cd multi-agent-code-reviewer
 npm install
 ```
 
-Crea `.env.local`:
+Create `.env.local`:
 ```env
-AI_GATEWAY_API_KEY=tu_clave_de_vercel_ai_gateway
+AI_GATEWAY_API_KEY=your_vercel_ai_gateway_key
 ```
 
 ```bash
 npm run dev    # → http://localhost:3000
-npm test       # → tests de schemas, metadata, rate-limit
+npm test       # → runs schemas, metadata, rate-limit tests
 ```
 
 ---
 
-## Decisiones técnicas explicadas
+## Technical decisions explained
 
-### ¿Por qué un único endpoint SSE en vez de POST + polling?
+### Why a single SSE endpoint instead of POST + polling?
 
-La arquitectura alternativa sería:
-1. `POST /api/review/start` → devuelve un `jobId`
-2. `GET /api/review/status?jobId=xxx` → el cliente hace polling cada segundo
-3. Necesitas almacenamiento compartido (Vercel KV, Redis) para que el estado del job persista
+The alternative architecture would be:
+1. `POST /api/review/start` → returns a `jobId`
+2. `GET /api/review/status?jobId=xxx` → client polls every second
+3. You need shared storage (Vercel KV, Redis) so job state persists across requests
 
-Con un endpoint SSE único, el POST mismo es el stream. El cliente abre la conexión y el servidor empuja eventos mientras los agentes trabajan. Elimina la necesidad de almacenamiento externo manteniendo exactamente la misma UX de progreso en tiempo real.
+With a single SSE endpoint, the POST itself is the stream. The client opens the connection and the server pushes events while the agents work. This eliminates the need for external storage while delivering exactly the same real-time progress UX.
 
-### ¿Por qué paralelo + supervisor en vez de un solo agente?
+### Why parallel agents + supervisor instead of a single agent?
 
-Un solo agente que revisa seguridad, rendimiento y mantenibilidad al mismo tiempo tiende a:
-- Olvidar categorías si el código es largo
-- No ser tan sistemático como un especialista enfocado
-- Producir hallazgos desequilibrados (muchos de una categoría, pocos de otras)
+A single agent that reviews security, performance, and maintainability at the same time tends to:
+- Miss categories when the code is long
+- Be less systematic than a focused specialist
+- Produce unbalanced findings (many in one category, few in others)
 
-Con agentes especializados, cada uno tiene su propio system prompt con criterios detallados de su dominio. El supervisor recibe los resultados consolidados y solo tiene que ordenar, deduplicar y resumir — tarea para la que Haiku es más que suficiente.
+With specialized agents, each one has its own system prompt with detailed criteria for its domain. The supervisor receives the consolidated results and only needs to sort, deduplicate, and summarize — a task well-suited for Haiku.
 
-### ¿Por qué `Promise.all` en vez de secuencial?
+### Why `Promise.all` instead of sequential execution?
 
-Los 3 agentes especialistas son completamente independientes entre sí — el agente de seguridad no necesita los resultados del de rendimiento ni viceversa. Ejecutarlos en paralelo reduce el tiempo total de ~45s (secuencial) a ~15s (paralelo). El supervisor sí necesita los 3 resultados, por lo que se ejecuta después de que `Promise.all` resuelve.
+The 3 specialist agents are completely independent — the security agent does not need the performance agent's results and vice versa. Running them in parallel reduces total time from ~45 seconds (sequential) to ~15 seconds (parallel). The supervisor does need all 3 results, so it runs after `Promise.all` resolves.
+
+### Why Zod schemas as agent contracts?
+
+Without structured output, each agent's response would be free-form text requiring fragile parsing. With Zod schemas passed to `generateObject`, the AI SDK enforces the shape at the boundary between the LLM and your application code. If the model hallucinates a field or omits a required property, the SDK rejects the response before it ever reaches your business logic. This makes the agents reliable components rather than unpredictable text producers.
 
 ---
 
-## Límites
+## Limits
 
-| Límite | Valor | Razón |
-|--------|-------|-------|
-| Reviews por IP/hora | 3 | Cada review hace 4 llamadas a LLMs (costoso) |
-| Timeout máximo | 120 segundos | Límite del plan Vercel Hobby |
-| GitHub repos | Solo públicos | No hay OAuth implementado |
-| Tamaño de código | Sin límite duro | Archivos muy grandes pueden alcanzar el timeout |
+| Limit | Value | Reason |
+|-------|-------|--------|
+| Reviews per IP/hour | 3 | Each review makes 4 LLM calls (costly) |
+| Maximum timeout | 120 seconds | Vercel Hobby plan limit |
+| GitHub repos | Public only | No OAuth implemented |
+| Code size | No hard limit | Very large files may hit the timeout |
