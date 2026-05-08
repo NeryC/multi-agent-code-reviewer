@@ -16,10 +16,25 @@ const severityColors: Record<Finding['severity'], string> = {
   info: 'bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-300',
 };
 
+// Left border accent color by severity
+const severityBorderAccent: Record<Finding['severity'], string> = {
+  critical: 'border-l-4 border-l-red-600',
+  high: 'border-l-4 border-l-orange-500',
+  medium: 'border-l-4 border-l-yellow-500',
+  low: 'border-l-4 border-l-blue-500',
+  info: 'border-l-4 border-l-gray-400',
+};
+
 const categoryIcon: Record<Finding['category'], string> = {
   security: '🔒',
   performance: '⚡',
   maintainability: '🔧',
+};
+
+const categoryAriaLabel: Record<Finding['category'], string> = {
+  security: 'Security finding',
+  performance: 'Performance finding',
+  maintainability: 'Maintainability finding',
 };
 
 type Props = { finding: Finding };
@@ -28,10 +43,12 @@ export function FindingCard({ finding }: Props) {
   const [showDiff, setShowDiff] = useState(false);
 
   return (
-    <Card>
+    <Card className={severityBorderAccent[finding.severity]}>
       <CardHeader className="py-3 pb-2">
         <CardTitle className="text-sm flex flex-wrap items-center gap-2">
-          <span>{categoryIcon[finding.category]}</span>
+          <span aria-label={categoryAriaLabel[finding.category]}>
+            {categoryIcon[finding.category]}
+          </span>
           <span className="flex-1">{finding.title}</span>
           {finding.line && (
             <span className="text-xs text-muted-foreground font-mono">line {finding.line}</span>
@@ -49,6 +66,7 @@ export function FindingCard({ finding }: Props) {
           <div className="space-y-1">
             <button
               type="button"
+              aria-expanded={showDiff}
               onClick={() => setShowDiff(!showDiff)}
               className="text-xs text-muted-foreground hover:text-foreground underline"
             >

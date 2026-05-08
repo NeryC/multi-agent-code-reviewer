@@ -1,7 +1,17 @@
+'use client';
+
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FindingCard } from './finding-card';
 import type { ReviewReport } from '@/lib/schemas';
+
+function scoreLabel(score: number): string {
+  if (score >= 80) return 'Production Ready';
+  if (score >= 60) return 'Minor Issues';
+  if (score >= 40) return 'Needs Work';
+  return 'Significant Problems';
+}
 
 function ScoreGauge({ score }: { score: number }) {
   const radius = 54;
@@ -12,7 +22,13 @@ function ScoreGauge({ score }: { score: number }) {
 
   return (
     <div className="flex flex-col items-center gap-1">
-      <svg width="140" height="140" viewBox="0 0 140 140">
+      <svg
+        width="140"
+        height="140"
+        viewBox="0 0 140 140"
+        role="img"
+        aria-label={`Score: ${score} out of 100`}
+      >
         <circle cx="70" cy="70" r={radius} fill="none" stroke="#e5e7eb" strokeWidth="12" />
         <circle
           cx="70"
@@ -26,13 +42,23 @@ function ScoreGauge({ score }: { score: number }) {
           strokeLinecap="round"
           transform="rotate(-90 70 70)"
         />
-        <text x="70" y="70" textAnchor="middle" dominantBaseline="central" fontSize="28" fontWeight="bold" fill={color}>
+        <text
+          x="70"
+          y="70"
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize="28"
+          fontWeight="bold"
+          fill={color}
+        >
           {score}
         </text>
         <text x="70" y="92" textAnchor="middle" fontSize="11" fill="#6b7280">
           / 100
         </text>
       </svg>
+      {/* Human-readable score label below gauge */}
+      <span className="text-xs font-medium text-muted-foreground">{scoreLabel(score)}</span>
     </div>
   );
 }
@@ -40,11 +66,15 @@ function ScoreGauge({ score }: { score: number }) {
 type Props = { report: ReviewReport };
 
 export function ReportSummary({ report }: Props) {
-  const byCategory = {
-    security: report.findings.filter((f) => f.category === 'security'),
-    performance: report.findings.filter((f) => f.category === 'performance'),
-    maintainability: report.findings.filter((f) => f.category === 'maintainability'),
-  };
+  // Memoize category grouping to avoid re-filtering on every render
+  const byCategory = useMemo(
+    () => ({
+      security: report.findings.filter((f) => f.category === 'security'),
+      performance: report.findings.filter((f) => f.category === 'performance'),
+      maintainability: report.findings.filter((f) => f.category === 'maintainability'),
+    }),
+    [report.findings],
+  );
 
   return (
     <div className="space-y-6">
@@ -83,9 +113,15 @@ export function ReportSummary({ report }: Props) {
       <Tabs defaultValue="all">
         <TabsList>
           <TabsTrigger value="all">All ({report.findings.length})</TabsTrigger>
-          <TabsTrigger value="security">🔒 {byCategory.security.length}</TabsTrigger>
-          <TabsTrigger value="performance">⚡ {byCategory.performance.length}</TabsTrigger>
-          <TabsTrigger value="maintainability">🔧 {byCategory.maintainability.length}</TabsTrigger>
+          <TabsTrigger value="security">
+            🔒 Security ({byCategory.security.length})
+          </TabsTrigger>
+          <TabsTrigger value="performance">
+            ⚡ Performance ({byCategory.performance.length})
+          </TabsTrigger>
+          <TabsTrigger value="maintainability">
+            🔧 Maintainability ({byCategory.maintainability.length})
+          </TabsTrigger>
         </TabsList>
         {(['all', 'security', 'performance', 'maintainability'] as const).map((tab) => (
           <TabsContent key={tab} value={tab} className="space-y-3 mt-3">
@@ -93,7 +129,9 @@ export function ReportSummary({ report }: Props) {
               <FindingCard key={`${finding.category}-${finding.title}-${i}`} finding={finding} />
             ))}
             {(tab === 'all' ? report.findings : byCategory[tab]).length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">No findings in this category.</p>
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No findings in this category.
+              </p>
             )}
           </TabsContent>
         ))}

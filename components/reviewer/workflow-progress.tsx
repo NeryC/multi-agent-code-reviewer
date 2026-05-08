@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge';
+import { FileSearch, Info, Shield, Zap, Wrench, Brain, Loader2, CheckCircle2 } from 'lucide-react';
 import type { WorkflowEventType } from '@/lib/workflow/orchestrate';
 
 type StepState = 'pending' | 'running' | 'done' | 'error';
@@ -49,7 +50,7 @@ function buildSteps(events: WorkflowEventType[]): StepEntry[] {
 
 const stateColors: Record<StepState, string> = {
   pending: 'bg-muted text-muted-foreground',
-  running: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 animate-pulse',
+  running: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
   done: 'bg-green-500/10 text-green-600 dark:text-green-400',
   error: 'bg-red-500/10 text-red-600 dark:text-red-400',
 };
@@ -61,31 +62,76 @@ const stateLabels: Record<StepState, string> = {
   error: 'Error',
 };
 
-type Props = { events: WorkflowEventType[] };
+// Step icon lookup by key
+const stepIcons: Record<string, React.ElementType> = {
+  parseInput: FileSearch,
+  extractMetadata: Info,
+  'agent-security': Shield,
+  'agent-performance': Zap,
+  'agent-maintainability': Wrench,
+  supervisor: Brain,
+};
 
-export function WorkflowProgress({ events }: Props) {
+type Props = { events: WorkflowEventType[]; status?: 'idle' | 'streaming' | 'done' | 'error' };
+
+export function WorkflowProgress({ events, status }: Props) {
   if (events.length === 0) return null;
 
   const steps = buildSteps(events);
+  const isStreaming = status === 'streaming';
+  const isDone = status === 'done';
 
   return (
     <div className="space-y-2">
-      <h2 className="text-sm font-medium text-muted-foreground">Workflow</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-medium text-muted-foreground">Workflow</h2>
+        {isStreaming && (
+          <span className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 font-medium">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Analyzing...
+          </span>
+        )}
+        {isDone && (
+          <span className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 font-medium">
+            <CheckCircle2 className="h-3 w-3" />
+            Analysis complete
+          </span>
+        )}
+      </div>
+
       <div className="space-y-1">
-        {steps.map((step) => (
-          <div
-            key={step.key}
-            className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
-          >
-            <span className="font-medium">{step.label}</span>
-            <div className="flex items-center gap-2">
-              {step.detail && (
-                <span className="text-xs text-muted-foreground">{step.detail}</span>
-              )}
-              <Badge className={stateColors[step.state]}>{stateLabels[step.state]}</Badge>
+        {steps.map((step) => {
+          const Icon = stepIcons[step.key];
+          return (
+            <div
+              key={step.key}
+              className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
+            >
+              <div className="flex items-center gap-2">
+                {/* Step icon */}
+                {Icon && (
+                  <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                )}
+                <span className="font-medium">{step.label}</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {step.detail && (
+                  <span className="text-xs text-muted-foreground">{step.detail}</span>
+                )}
+                {/* Animated spinner replaces badge while running */}
+                {step.state === 'running' ? (
+                  <span className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
+                    <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+                    <span>Running</span>
+                  </span>
+                ) : (
+                  <Badge className={stateColors[step.state]}>{stateLabels[step.state]}</Badge>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
