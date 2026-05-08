@@ -9,13 +9,13 @@ export default function Home() {
           {/* Agent count pill */}
           <Badge
             variant="secondary"
-            className="text-xs font-medium px-3 py-1 rounded-full"
+            className="text-xs font-medium px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20"
           >
             3 specialized agents · Security, Performance, Maintainability
           </Badge>
 
           {/* Gradient heading */}
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground via-foreground/80 to-foreground/60 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white via-indigo-200 to-violet-400 bg-clip-text text-transparent">
             Multi-Agent Code Reviewer
           </h1>
 
